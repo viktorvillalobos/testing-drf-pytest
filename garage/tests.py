@@ -24,7 +24,13 @@ class TestCarManager:
         ]
 
         date = strftime('%Y-%m-%d')
+        # django-mock-queries nos permite crear Mock QuerySets
+        # para omitir el acceso a BD
         qs = MockSet(expected_results[0])
+
+        # Patch el metodo qet_queryset para modificar su comportamiento
+        # y que nos retorne nuestro queryset  y asi omitir el acceso
+        # a BD
         mocker.patch.object(Car.objects, 'get_queryset', return_value=qs)
 
         result = list(Car.objects.get_cars_by_created(date))
@@ -61,6 +67,8 @@ class TestCarSerializer:
 
         serializer = CarSerializer(data=incomplete_data)
 
+        # Este ContextManager nos permite verificar que
+        # se ejecute correctamente una Excepcion
         with pytest.raises(ValidationError):
             serializer.is_valid(raise_exception=True)
 
@@ -69,8 +77,15 @@ class TestViewSet:
 
     @pytest.mark.urls('garage.urls')
     def test_list(self, rf, mocker):
+        #  django-pytest nos permite pasar por inyeccion de dependencia
+        # a nuestros tests algunos objetos, en este caso le "INYECTE"
+        # el objeto rf que no es mas que el comun RequestFactory
+        # y mocker que nos permite hacer patch a objetos y funciones
         url = reverse('car-list')
         request = rf.get(url)
+
+        # usamos la libreria django-mock-queries para crear un Mock
+        # de nuestro queryset y omitir el acceso a BD
 
         queryset = MockSet(
             Car(name='Ferrari', code='fr1', year=2019),
@@ -101,6 +116,7 @@ class TestViewSet:
         response = CarViewSet.as_view({'post': 'create'})(request).render()
         assert response.status_code == 201
         assert json.loads(response.content).get('name') == 'Ferrari'
+        # Verificamos si efectivamente se llamo el metodo save
         assert Car.save.called
 
     @pytest.mark.urls('garage.urls')
@@ -115,6 +131,10 @@ class TestViewSet:
                   year=2019,
                   created=datetime.datetime.now(),
                   modified=datetime.datetime.now())
+
+        # Patch al metodo get_object de nuestro ViewSet para
+        # para omitir el acceso a BD
+        # Lo mismo para el motodo save() de nuestro modelo Car
 
         mocker.patch.object(CarViewSet, 'get_object', return_value=car)
         mocker.patch.object(Car, 'save')
@@ -138,6 +158,8 @@ class TestViewSet:
                   created=datetime.datetime.now(),
                   modified=datetime.datetime.now())
 
+        # De nuevo hacemos patch al metodo get_object
+        # y tambien al delete del objeto.
         mocker.patch.object(CarViewSet, 'get_object', return_value=car)
         mocker.patch.object(Car, 'delete')
 
