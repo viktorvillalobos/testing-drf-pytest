@@ -98,6 +98,9 @@ class TestViewSet:
         assert response.status_code == 200
         assert len(json.loads(response.content)) == 2
 
+    # Este helper de la libreria django-pytest, nos permite olvidarnos
+    # de los namespaces de las urls de django, y utilizar un archivo
+    # urls.py definido.
     @pytest.mark.urls('garage.urls')
     def test_create(self, rf, mocker):
         url = reverse('car-list')
@@ -113,7 +116,9 @@ class TestViewSet:
                           data=json.dumps(data))
 
         mocker.patch.object(Car, 'save')
+        # Renderizamos la vista con nuestro request.
         response = CarViewSet.as_view({'post': 'create'})(request).render()
+
         assert response.status_code == 201
         assert json.loads(response.content).get('name') == 'Ferrari'
         # Verificamos si efectivamente se llamo el metodo save
