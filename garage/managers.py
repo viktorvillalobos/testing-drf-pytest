@@ -10,4 +10,4 @@ class CarManager(models.Manager):
         queryset = self.get_queryset()
         return queryset.filter(created__year=date.tm_year,
                                created__month=date.tm_mon,
-                               created__day=date.tm_mday)
+                               created__day=date.tm_mday).order_by('year')
